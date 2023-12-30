@@ -1,54 +1,63 @@
-var BTN = document.querySelector("button")
-var TEXTAREA = document.querySelector("#textSpeech")
-var DIV = document.querySelector("#reponse_msg")
-var BTN_MIC = document.querySelector("#bMic")
-//var SpeechRecognition = SpeechRecognition || webkitSpeechRecognition
-var recognition = new webkitSpeechRecognition();
-recognition.continuous = false;
-recognition.lang = 'en-US';
-recognition.interimResults = false;
-recognition.maxAlternatives = 1;
-//EVENEMENT
-BTN.addEventListener("click", chatBot)
-BTN_MIC.addEventListener("click", speechToText)
-//fonction principale
-function chatBot() {
-    let text = TEXTAREA.value
-    //je dois communiquer avec le backend
-    var url_backend = "http://127.0.0.1:8000/analyse"
-    fetch(url_backend,
-        {
-            method: "POST",
-            body: JSON.stringify({ "texte": text }),
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        .then(reponse => {
-            reponse.json()
+var BTN = document.getElementById("button");
+var TEXTAREA = document.getElementById("user-message");
+var DIV = document.getElementById("chatbot-response");
+var BTN_MIC = document.getElementById("bMic");
+var BTN_SP = document.getElementById("bSpeak")
+BTN.addEventListener("click", function () {
+    var userQuery = TEXTAREA.value;
+    sendQueryToServer(userQuery);
+    TEXTAREA.value = '';
+});
+
+BTN_MIC.addEventListener("click", function () {
+    speechToText();
+});
+
+BTN_SP.addEventListener("click", function () {
+    textToSpeech(DIV.texte);
+});
+
+function sendQueryToServer(query) {
+    var url_backend = "http://127.0.0.1:8000/analyse";
+    fetch(url_backend, {
+        method: "POST",
+        body: JSON.stringify({ "texte": query }),
+        headers: {
+            'Content-Type': 'application/json'
+        }
+    })
+        .then(response => {
+            response.json()
                 .then(data => {
-                    console.log(data)
+                    console.log(data);
+                    DIV.innerText = data.chatbot_response;
                 })
         })
         .catch(e => {
-            console.warn(e)
-        })
+            console.warn(e);
+        });
 }
+
+function textToSpeech(texte){
+    //lire sous format Audio  
+    let utterance = new SpeechSynthesisUtterance(texte);
+    speechSynthesis.speak(utterance); 
+}
+
 function speechToText() {
-    alert("Je suis speech to text")
-    //1ère partie déclencher l'API Speech To Text
     recognition.start();
-
 }
 
+var recognition = new webkitSpeechRecognition();
+recognition.continuous = false;
+recognition.interimResults = false;
+recognition.lang = 'en-US'; // Choisir la langue appropriÃ©e
+recognition.maxAlternatives = 1;
 
 recognition.onresult = function (event) {
-
-    //2ème partie récupérer le texte
     var message = event.results[0][0].transcript;
     console.log('Result received: ' + message + '.');
     console.log('Confidence: ' + event.results[0][0].confidence);
 
-    //3ème partie remplir l'input en utilisant ce texte
-    TEXTAREA.value = message
-}
+    TEXTAREA.value = message;
+};
